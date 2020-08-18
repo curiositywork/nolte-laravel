@@ -14,4 +14,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('insights', 'PageSpeedController@insights');
+Route::group(['prefix' => 'v1/company'], function () {
+  Route::post('store', 'CompanyController@store');
+  Route::get('insights', 'PageSpeedController@insights');
+});
