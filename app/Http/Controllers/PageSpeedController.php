@@ -15,7 +15,11 @@ class PageSpeedController extends Controller
         $validator = Validator::make(
             $request->all(),
             [
-                'company_id' => 'required|numeric',
+                'url' => [
+                    'required',
+                    'min:15',
+                    'regex:/((http:|https:)\/\/)[^\/]+/',
+                ],
             ]
         );
 
@@ -34,8 +38,8 @@ class PageSpeedController extends Controller
         $pageSpeedUrl = env('PAGE_SPEED_BASE_URL');
         $pageSpeedKey = env('PAGE_SPEED_TOKEN');
 
-        $companyId = $request->get('company_id');
-        $company = Company::find($companyId);
+        $url = $request->get('url');
+        $company = Company::where('url', $url)->first();
 
         $uri = $pageSpeedUrl. 'pagespeedonline/v5/runPagespeed?url=' .$company->url. '&key='. $pageSpeedKey .
             '&category=accessibility&category=best-practices&category=performance&category=pwa&category=seo';
