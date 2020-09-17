@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::group(['prefix' => 'v1/company'], function () {
   Route::get('feedback', 'CompanyController@feedback');
+  Route::get('report', 'CompanyController@report');
   Route::get('feedback/{id}', 'FeedbackController@show');
   Route::post('insights', 'InsightsController@insights');
   Route::post('store', 'CompanyController@store');

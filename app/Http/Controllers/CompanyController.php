@@ -127,7 +127,7 @@ class CompanyController extends Controller
             ], IlluminateResponse::HTTP_OK);
     }
 
-    public function insights(Request $request)
+    public function report(Request $request)
     {
         $url = $request->url;
         $insights = Company::whereUrl($url)->first()->insights()->get();
