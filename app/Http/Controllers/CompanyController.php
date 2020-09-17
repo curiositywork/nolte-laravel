@@ -127,6 +127,18 @@ class CompanyController extends Controller
             ], IlluminateResponse::HTTP_OK);
     }
 
+    public function insights(Request $request)
+    {
+        $url = $request->url;
+        $insights = Company::whereUrl($url)->first()->insights()->get();
+
+        return response()->json(
+            [
+                'success' => TRUE,
+                'data' => $insights,
+            ], IlluminateResponse::HTTP_OK);
+    }
+
     private function getOrCreateComponent($slug, $type = 'plugin')
     {
         $component = Component::where('slug', $slug)
