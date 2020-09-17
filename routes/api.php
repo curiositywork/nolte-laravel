@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::group(['prefix' => 'v1/company'], function () {
+  Route::get('feedback', 'CompanyController@feedback');
+  Route::get('feedback/{id}', 'FeedbackController@show');
+  Route::post('insights', 'InsightsController@insights');
   Route::post('store', 'CompanyController@store');
-  Route::get('insights', 'PageSpeedController@insights');
+  Route::post('components', 'CompanyController@components');
+  Route::patch('feedback/archive/{id}', 'FeedbackController@archive');
 });
