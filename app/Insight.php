@@ -11,7 +11,7 @@ class Insight extends Model
      *
      * @var array
      */
-    protected $hidden = ['created_at', 'updated_at'];
+    protected $hidden = ['company_id', 'updated_at'];
 
     /**
      * The primary key associated with the table.

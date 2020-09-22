@@ -36,11 +36,12 @@ class Company extends Model
 
     /**
      * Get the customer record associated with the company.
-     */
-    public function customer()
-    {
-        return $this->hasOne(Customer::class);
-    }
+     *
+     * public function customer()
+     * {
+     *   return $this->hasOne(Customer::class);
+     * }
+    */
 
     /**
      * Get the feedback for the company.

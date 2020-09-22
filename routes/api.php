@@ -22,4 +22,5 @@ Route::group(['prefix' => 'v1/company'], function () {
   Route::post('store', 'CompanyController@store');
   Route::post('components', 'CompanyController@components');
   Route::patch('feedback/archive/{id}', 'FeedbackController@archive');
+  Route::patch('feedback/unarchive/{id}', 'FeedbackController@unarchive');
 });

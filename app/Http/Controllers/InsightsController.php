@@ -54,7 +54,7 @@ class InsightsController extends Controller
         $reportCategories = $insightReport['categories'];
 
         $insecureComponents = [];
-        foreach ($components as $key => $component)
+        foreach ($components as &$component)
         {
             $hasVulnerability = false;
             $vulnerabilityIds = [];
@@ -64,7 +64,7 @@ class InsightsController extends Controller
             $version = $component->pivot->version;
             $active = boolval($component->pivot->active);
 
-            foreach ($component->vulnerabilities as $key => $vulnerability)
+            foreach ($component->vulnerabilities as &$vulnerability)
             {
                 $fixedVersion = version_compare($version, $vulnerability->fixed_in) < 0;
                 if (is_null($vulnerability->fixed_in) || $fixedVersion)
@@ -91,7 +91,11 @@ class InsightsController extends Controller
                     $feedback->impact = $type == 'plugin' ? 'high' : 'medium';
                 }
 
-                $feedback->status = $active ? 'pending' : 'completed';
+                if ($feedback->status != 'archive')
+                {
+                    $feedback->status = $active ? 'pending' : 'completed';
+                }
+                
                 $feedback->version = $version;
 
                 $company->feedback()->save($feedback);
@@ -123,7 +127,7 @@ class InsightsController extends Controller
         }
         
         $security = 100 - (count(array_unique($insecureComponents)) *  25);
-        $general = ($seo + $security + $performance + $accessibility)/4;
+        $general = intval(($seo + $security + $performance + $accessibility)/4);
 
         $insight = new Insight;
         $insight->seo = $seo;

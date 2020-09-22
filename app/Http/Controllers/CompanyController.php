@@ -61,13 +61,6 @@ class CompanyController extends Controller
         $company->business_type = $request->business_type;
         $company->save();
 
-        $customer = new Customer;
-        $customer->name = $request->customer['name'];
-        $customer->surname = $request->customer['surname'];
-        $customer->phone = $request->customer['phone'];
-        $customer->email = $request->customer['email'];
-        $company->customer()->save($customer);
-
         return response()->json(
             [
                 'success' => TRUE,
@@ -130,7 +123,7 @@ class CompanyController extends Controller
     public function report(Request $request)
     {
         $url = $request->url;
-        $insights = Company::whereUrl($url)->first()->insights()->get();
+        $insights = Company::whereUrl($url)->first()->insights()->get(['general', 'created_at']);
 
         return response()->json(
             [

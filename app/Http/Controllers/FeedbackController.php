@@ -16,7 +16,7 @@ class FeedbackController extends Controller
      */
     public function show($id)
     {
-        $feedback = Feedback::findOrFail($id)->with('vulnerabilities')->get();
+        $feedback = Feedback::find($id)->load('vulnerabilities');
         return response()->json(
             [
                 'success' => TRUE,
@@ -33,10 +33,29 @@ class FeedbackController extends Controller
      */
     public function archive($id)
     {
-        $feedback = Feedback::findOrFail($id);
-        $feedback->status = 'archive';
-        $feedback->save();
+        $feedback = Feedback::find($id);
+        if ($feedback->status != 'archive')
+        {
+            $feedback->status = 'archive';
+            $feedback->save();
+        }
+        
+        return response()->json(
+            [
+                'success' => TRUE,
+                'data' => $feedback,
+            ], IlluminateResponse::HTTP_OK);
+    }
 
+    public function unarchive($id)
+    {
+        $feedback = Feedback::find($id);
+        if ($feedback->status == 'archive')
+        {
+            $feedback->status = 'pending';
+            $feedback->save();
+        }
+        
         return response()->json(
             [
                 'success' => TRUE,

@@ -37,9 +37,10 @@ class Customer extends Model
 
     /**
      * Get the company associated customer.
-     */
-    public function company()
-    {
-        return $this->belongsTo(Company::class);
-    }
+     *
+     * public function company()
+     * {
+     *   return $this->belongsTo(Company::class);
+     * }
+    */
 }
