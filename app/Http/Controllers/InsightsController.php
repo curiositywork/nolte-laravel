@@ -44,8 +44,7 @@ class InsightsController extends Controller
 
     public function insights(Request $request)
     {
-        $url = $request->url;
-        $company = Company::where('url', $url)->first();
+        $company = Company::where('url', $request->url)->first();
 
         $components = $company->componentsWithVulnerabilities();
         $insightReport = $this->pageSpeedReport($company->url);

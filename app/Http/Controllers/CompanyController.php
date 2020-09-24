@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Exception;
 use App\Audit;
 use App\Company;
 use App\Insight;
@@ -19,6 +20,49 @@ class CompanyController extends Controller
     const WORDPRESS = 'wordpress';
     const PLUGINS  = 'plugins';
 
+    public function onboardingCompleted(Request $request)
+    {
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'url' => [
+                    'required',
+                    'min:15',
+                    'regex:/((http:|https:)\/\/)[^\/]+/'
+                ]
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'success' => FALSE,
+                    'error' => [
+                        'code' => 100,
+                        'messages' => $validator->errors()->all()
+                    ]
+                ], IlluminateResponse::HTTP_BAD_REQUEST
+            );
+        }
+
+        $company = Company::where('url', $request->url)->first();
+
+        if (is_null($company))
+        {
+            return response()->json(
+                [
+                    'success' => TRUE,
+                    'completed' => FALSE,
+                ], IlluminateResponse::HTTP_OK);
+        }
+
+        return response()->json(
+            [
+                'success' => TRUE,
+                'completed' => TRUE,
+            ], IlluminateResponse::HTTP_OK);
+    }
+
     /**
      * Store a newly created resource in storage.
      *
@@ -34,7 +78,7 @@ class CompanyController extends Controller
                     'required',
                     'unique:companies',
                     'min:15',
-                    'regex:/((http:|https:)\/\/)[^\/]+/',
+                    'regex:/((http:|https:)\/\/)[^\/]+/'
                 ],
                 'size' => 'required|in:micro,small,medium,large',
                 'industry' => 'required|in:apparel,banking_financial,electronics,food_groceries,goverment,others',
@@ -70,48 +114,103 @@ class CompanyController extends Controller
 
     public function components(Request $request)
     {
-        $url = $request->url;
-        $company = Company::where('url', $url)->first();
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'url' => [
+                    'required',
+                    'min:15',
+                    'regex:/((http:|https:)\/\/)[^\/]+/'
+                ],
+                'components' => 'required'
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'success' => FALSE,
+                    'error' => [
+                        'code' => 100,
+                        'messages' => $validator->errors()->all()
+                    ]
+                ], IlluminateResponse::HTTP_BAD_REQUEST
+            );
+        }
+
+        $company = Company::where('url', $request->url)->first();
+
+        if (is_null($company))
+        {
+            return response()->json(
+                [
+                    'success' => FALSE,
+                    'error' => [
+                        'code' => 100,
+                        'messages' => 'Company not found'
+                    ]
+                ], IlluminateResponse::HTTP_NOT_FOUND
+            );
+        }
 
         $company->deactivateComponents();
 
-        foreach ($request->components as $type => $value)
-        {
-            if ($type == static::PLUGINS)
+        try {
+            foreach ($request->components as $type => $value)
             {
-                foreach ($value as &$plugin)
+                if ($type == static::PLUGINS)
                 {
-                    $component = $this->getOrCreateComponent($plugin['slug']);
+                    foreach ($value as &$plugin)
+                    {
+                        $component = $this->getOrCreateComponent($plugin['slug']);
+                        $company->addComponent(
+                            $component->id,
+                            $plugin['version'],
+                            $plugin['active']
+                        );
+                    }
+                }
+                else
+                {
+                    $component = $this->getOrCreateComponent($value['slug'], $type);
                     $company->addComponent(
                         $component->id,
-                        $plugin['version'],
-                        $plugin['active']
+                        $value['version'],
+                        TRUE,
+                        $type
                     );
                 }
-            } 
-            else
-            {
-                $component = $this->getOrCreateComponent($value['slug'], $type);
-                $company->addComponent(
-                    $component->id,
-                    $value['version'],
-                    TRUE,
-                    $type
-                );
             }
-        }
 
-        return response()->json(
-            [
-                'success' => TRUE,
-                'message' => 'Components successfully created',
-            ], IlluminateResponse::HTTP_OK);
+            return response()->json(
+                [
+                    'success' => FALSE,
+                    'message' => 'Components successfully created',
+                ], IlluminateResponse::HTTP_OK);
+        }
+        catch (\Throwable $th)
+        {
+            return response()->json(
+                [
+                    'success' => FALSE,
+                    'error' => [
+                        'code' => 100,
+                        'messages' => $th->getMessage()
+                    ]
+                ], IlluminateResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
+
 
     public function feedback(Request $request)
     {
         $url = $request->url;
-        $feedback = Company::whereUrl($url)->first()->feedback()->get();
+        $status = $request->status;
+        $feedback = Company::where('url', $url)
+                            ->first()
+                            ->feedback()
+                            ->where('status', $status)
+                            ->get();
 
         return response()->json(
             [
@@ -143,6 +242,10 @@ class CompanyController extends Controller
             $path = $type == static::WORDPRESS ? 'wordpresses' : $type .'s';
 
             $vulnData = $this->vulnReport($path, $slug);
+            if (isset($vulnData['error']))
+            {
+               throw new Exception($vulnData['error']);
+            }
             $version = $type == static::WORDPRESS ? key((array)$vulnData) : null;
 
             $component = Component::create($slug, $vulnData, $type, $version);
@@ -163,7 +266,6 @@ class CompanyController extends Controller
     private function vulnReport($path, $slug)
     {
         $url = getenv('WP_VULN_BASE_URL'). '/' .$path. '/' .$slug;
-
         $response = Http::withToken(getenv('WP_VULN_TOKEN'))->get($url);
         return $response->json();
     }
