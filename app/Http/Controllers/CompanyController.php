@@ -163,22 +163,27 @@ class CompanyController extends Controller
                     foreach ($value as &$plugin)
                     {
                         $component = $this->getOrCreateComponent($plugin['slug']);
-                        $company->addComponent(
-                            $component->id,
-                            $plugin['version'],
-                            $plugin['active']
-                        );
+                        if(!is_null($component)) {
+                            $company->addComponent(
+                                $component->id,
+                                $plugin['version'],
+                                $plugin['active']
+                            );
+                        }
+                        
                     }
                 }
                 else
                 {
                     $component = $this->getOrCreateComponent($value['slug'], $type);
-                    $company->addComponent(
-                        $component->id,
-                        $value['version'],
-                        TRUE,
-                        $type
-                    );
+                    if(!is_null($component)) {
+                        $company->addComponent(
+                            $component->id,
+                            $value['version'],
+                            TRUE,
+                            $type
+                        );
+                    }
                 }
             }
 
@@ -244,7 +249,7 @@ class CompanyController extends Controller
             $vulnData = $this->vulnReport($path, $slug);
             if (isset($vulnData['error']))
             {
-               throw new Exception($vulnData['error']);
+               return null;
             }
             $version = $type == static::WORDPRESS ? key((array)$vulnData) : null;
 
