@@ -184,7 +184,7 @@ class CompanyController extends Controller
 
             return response()->json(
                 [
-                    'success' => FALSE,
+                    'success' => TRUE,
                     'message' => 'Components successfully created',
                 ], IlluminateResponse::HTTP_OK);
         }

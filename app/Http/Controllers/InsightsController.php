@@ -81,7 +81,7 @@ class InsightsController extends Controller
                 {
                     array_push($insecureComponents, $type);
                 }
-                
+
                 if (is_null($feedback))
                 {
                     $feedback = new Feedback;
@@ -94,7 +94,7 @@ class InsightsController extends Controller
                 {
                     $feedback->status = $active ? 'pending' : 'completed';
                 }
-                
+
                 $feedback->version = $version;
 
                 $company->feedback()->save($feedback);
@@ -167,7 +167,7 @@ class InsightsController extends Controller
                 $newAudit->display_mode = isset($audit['scoreDisplayMode']) ? $audit['scoreDisplayMode'] : null;
                 $newAudit->display_value = isset($audit['displayValue']) ? $audit['displayValue'] : null;
                 $newAudit->numeric_value = isset($audit['numericValue']) ? $audit['numericValue'] : null;
-                
+
                 $insight->audits()->save($newAudit);
             }
         }
