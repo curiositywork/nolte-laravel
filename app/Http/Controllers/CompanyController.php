@@ -162,7 +162,7 @@ class CompanyController extends Controller
                 {
                     foreach ($value as &$plugin)
                     {
-                        $component = $this->getOrCreateComponent($plugin['slug']);
+                        $component = $this->getOrCreateComponent($plugin['slug'], 'plugin');
                         if(!is_null($component)) {
                             $company->addComponent(
                                 $component->id,
@@ -236,7 +236,7 @@ class CompanyController extends Controller
             ], IlluminateResponse::HTTP_OK);
     }
 
-    private function getOrCreateComponent($slug, $type = 'plugin')
+    private function getOrCreateComponent($slug, $type)
     {
         $component = Component::where('slug', $slug)
                                 ->where('component_type', $type)
@@ -247,9 +247,9 @@ class CompanyController extends Controller
             $path = $type == static::WORDPRESS ? 'wordpresses' : $type .'s';
 
             $vulnData = $this->vulnReport($path, $slug);
-            if (isset($vulnData['error']))
+            if (is_null($vulnData))
             {
-               return null;
+                return null;
             }
             $version = $type == static::WORDPRESS ? key((array)$vulnData) : null;
 
@@ -271,7 +271,11 @@ class CompanyController extends Controller
     private function vulnReport($path, $slug)
     {
         $url = getenv('WP_VULN_BASE_URL'). '/' .$path. '/' .$slug;
-        $response = Http::withToken(getenv('WP_VULN_TOKEN'))->get($url);
-        return $response->json();
+        $response = Http::withHeaders(['Authorization' => 'Token token=' . getenv('WP_VULN_TOKEN')])->get($url);
+        if ($response->ok())
+        {
+            return $response->json();
+        }
+        return null;
     }
 }
