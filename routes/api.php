@@ -20,8 +20,13 @@ Route::group(['prefix' => 'v1/company'], function () {
   Route::get('report', 'CompanyController@report');
   Route::get('feedback/{id}', 'FeedbackController@show');
   Route::get('insights', 'InsightsController@insights');
+  Route::get('average', 'InsightsController@industryAverage');
   Route::post('store', 'CompanyController@store');
   Route::post('components', 'CompanyController@components');
   Route::patch('feedback/archive/{id}', 'FeedbackController@archive');
   Route::patch('feedback/unarchive/{id}', 'FeedbackController@unarchive');
+});
+
+Route::group(['prefix' => 'v1/scheduler'], function () {
+  Route::get('industry/average', 'SchedulerController@industryAverage');
 });

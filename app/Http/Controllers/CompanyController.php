@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Exception;
+use Carbon\Carbon;
 use App\Audit;
 use App\Company;
 use App\Insight;
@@ -10,6 +11,7 @@ use App\Customer;
 use App\Feedback;
 use App\Component;
 use App\Vulnerability;
+use App\IndustryAverage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -226,12 +228,23 @@ class CompanyController extends Controller
 
     public function report(Request $request)
     {
-        $url = $request->url;
-        $insights = Company::whereUrl($url)->first()->insights()->get(['general', 'created_at']);
+        $company = Company::where('url', $request->url)->first();
+        $insights = $company->insights()
+                            ->get(['general'])
+                            ->groupBy(function($date)
+                            {
+                                return Carbon::parse($date->created_at)->format('W');
+                            })
+                            ->map(function($row) {
+                                return round($row->sum('general')/count($row));
+                            });
+
+        $industryAverage = IndustryAverage::where('industry', $company->industry)->first();
 
         return response()->json(
             [
                 'success' => TRUE,
+                'average' => $industryAverage,
                 'data' => $insights,
             ], IlluminateResponse::HTTP_OK);
     }
