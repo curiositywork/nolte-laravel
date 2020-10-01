@@ -19,13 +19,13 @@ Route::group(['prefix' => 'v1/company'], function () {
   Route::get('feedback', 'CompanyController@feedback');
   Route::get('report', 'CompanyController@report');
   Route::get('feedback/{id}', 'FeedbackController@show');
-  Route::get('insights', 'InsightsController@insights');
   Route::post('store', 'CompanyController@store');
   Route::post('components', 'CompanyController@components');
   Route::patch('feedback/archive/{id}', 'FeedbackController@archive');
   Route::patch('feedback/unarchive/{id}', 'FeedbackController@unarchive');
+  Route::get('insights', 'InsightsController@insights')->middleware('check.cron.header');
 });
 
 Route::group(['prefix' => 'v1/scheduler'], function () {
-  Route::get('industry/average', 'SchedulerController@industryAverage');
+  Route::get('industry/average', 'SchedulerController@industryAverage')->middleware('check.cron.header');
 });

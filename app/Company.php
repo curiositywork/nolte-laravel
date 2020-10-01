@@ -34,6 +34,10 @@ class Company extends Model
      */
     public $timestamps = true;
 
+    public $filleable = [
+        'url', 'size', 'industry', 'business_type'
+    ];
+
     /**
      * Get the customer record associated with the company.
      *
@@ -42,6 +46,55 @@ class Company extends Model
      *   return $this->hasOne(Customer::class);
      * }
     */
+
+    public $rule = [
+        'url' => [
+            'required',
+            'min:15',
+            'regex:/((http:|https:)\/\/)[^\/]+/'
+        ]
+    ];
+
+    public $createRule = [
+        'url' => [
+            'required',
+            'unique:companies',
+            'min:15',
+            'regex:/((http:|https:)\/\/)[^\/]+/'
+        ],
+        'size' => 'required|in:micro,small,medium,large',
+        'industry' => 'required|in:apparel,banking_financial,electronics,food_groceries,goverment,others',
+        'business_type' => 'required|in:digital,ecommerce,both',
+    ];
+
+
+    public function findByUrl($url)
+    {
+        return $this->whereUrl($url)
+                    ->first();
+    }
+
+    public function feedbackByStatus($url, $status)
+    {
+        return $this->whereUrl('url', $url)
+                    ->first()
+                    ->feedback()
+                    ->where('status', $status)
+                    ->get();
+    }
+
+    public function insightsByWeek()
+    {
+        return $this->insights()
+                    ->get(['general'])
+                    ->groupBy(function($date)
+                    {
+                        return Carbon::parse($date->created_at)->format('W');
+                    })
+                    ->map(function($row) {
+                        return round($row->sum('general')/count($row));
+                    });
+    }
 
     /**
      * Get the feedback for the company.

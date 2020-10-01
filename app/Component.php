@@ -64,12 +64,19 @@ class Component extends Model
             'vulnerability_id');
     }
 
+    public function findByType($slug, $type)
+    {
+        return $this->where('slug', $slug)
+                    ->where('component_type', $type)
+                    ->first();
+    }
+
     public function addVulnerability($vulnerabilityId)
     {
         return $this->vulnerabilities()->attach($vulnerabilityId);
     }
 
-    public static function create($slug, $data, $type, $version)
+    public function create($slug, $data, $type, $version)
     {
         $closed = false;
         $popular = true;

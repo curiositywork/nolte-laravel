@@ -41,4 +41,10 @@ class IndustryAverage extends Model
      * @var bool
      */
     public $timestamps = true;
+
+    public function findByIndustry($industry)
+    {
+        return $this->where('industry', $company->industry)
+                    ->first();
+    }
 }

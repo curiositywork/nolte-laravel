@@ -54,34 +54,19 @@ class InsightsController extends Controller
 
     public function insights(Request $request)
     {
-        if ( $request->url )
+        if ($request->url)
         {
-            $companies = Company::where( 'url', $request->url )->get();
+            $companies = Company::where('url', $request->url)->get();
         }
         else
         {
-            if ( !app()->environment('development') )
-            {
-                if ( !$request->hasHeader( 'X-Appengine-Cron' ) )
-                {
-                    return response()->json(
-                        [
-                            'success' => FALSE,
-                            'error' => [
-                                'code' => 100,
-                                'messages' => 'Unauthorized'
-                            ]
-                        ], IlluminateResponse::HTTP_UNAUTHORIZED
-                    );
-                }
-            }
             $companies = Company::all();
         }
 
-        foreach ( $companies as &$company )
+        foreach ($companies as &$company)
         {
             $components = $company->componentsWithVulnerabilities();
-            $insightReport = $this->pageSpeedReport( $company->url );
+            $insightReport = $this->pageSpeedReport($company->url);
 
             $reportAudits = $insightReport[ 'audits' ];
             $reportCategories = $insightReport[ 'categories' ];
@@ -173,7 +158,7 @@ class InsightsController extends Controller
 
             foreach ($reportAudits as &$audit)
             {
-                if(in_array($audit['id'], static::FEEDBACK_AUDITS))
+                if (in_array($audit['id'], static::FEEDBACK_AUDITS))
                 {
                     if (!boolval($audit['score']))
                     {

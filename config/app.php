@@ -229,4 +229,8 @@ return [
 
     ],
 
+    'page_speed_token' => env('PAGE_SPEED_TOKEN'),
+    'page_speed_base_url' => env('PAGE_SPEED_BASE_URL'),
+    'wp_vuln_base_url' => env('WP_VULN_BASE_URL'),
+    'wp_vuln_token' => env('WP_VULN_TOKEN'),
 ];

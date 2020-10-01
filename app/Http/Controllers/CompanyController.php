@@ -7,13 +7,12 @@ use Carbon\Carbon;
 use App\Audit;
 use App\Company;
 use App\Insight;
-use App\Customer;
-use App\Feedback;
 use App\Component;
 use App\Vulnerability;
 use App\IndustryAverage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Http\Services\CompanyService;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Response as IlluminateResponse;
 
@@ -22,46 +21,36 @@ class CompanyController extends Controller
     const WORDPRESS = 'wordpress';
     const PLUGINS  = 'plugins';
 
+    private $company;
+    private $component;
+    private $vulnerability;
+    private $industryAverage;
+
+    public function __construct()
+    {
+        $this->company = new Company;
+        $this->companyService = new CompanyService;
+        $this->industryAverage = new IndustryAverage;
+    }
+
+    /**
+     * Check if a company completes the onboarding process.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function onboardingCompleted(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'url' => [
-                    'required',
-                    'min:15',
-                    'regex:/((http:|https:)\/\/)[^\/]+/'
-                ]
-            ]
-        );
-
+        $validator = Validator::make($request->all(), $this->company->rule);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'success' => FALSE,
-                    'error' => [
-                        'code' => 100,
-                        'messages' => $validator->errors()->all()
-                    ]
-                ], IlluminateResponse::HTTP_BAD_REQUEST
-            );
+            return $this->errorResponse($validator->errors()->all());
         }
 
-        $company = Company::where('url', $request->url)->first();
+        $company = $this->company->findByUrl($request->url);
 
-        if (is_null($company))
-        {
-            return response()->json(
-                [
-                    'success' => TRUE,
-                    'completed' => FALSE,
-                ], IlluminateResponse::HTTP_OK);
-        }
-
-        return response()->json(
-            [
+        return response()->json([
                 'success' => TRUE,
-                'completed' => TRUE,
+                'completed' => !is_null($company),
             ], IlluminateResponse::HTTP_OK);
     }
 
@@ -73,42 +62,14 @@ class CompanyController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'url' => [
-                    'required',
-                    'unique:companies',
-                    'min:15',
-                    'regex:/((http:|https:)\/\/)[^\/]+/'
-                ],
-                'size' => 'required|in:micro,small,medium,large',
-                'industry' => 'required|in:apparel,banking_financial,electronics,food_groceries,goverment,others',
-                'business_type' => 'required|in:digital,ecommerce,both',
-            ]
-        );
-
+        $validator = Validator::make($request->all(), $this->company->createRule);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'success' => FALSE,
-                    'error' => [
-                        'code' => 100,
-                        'messages' => $validator->errors()->all()
-                    ]
-                ], IlluminateResponse::HTTP_BAD_REQUEST
-            );
+            return $this->errorResponse($validator->errors()->all());
         }
 
-        $company = new Company;
-        $company->url = $request->url;
-        $company->size = $request->size;
-        $company->industry = $request->industry;
-        $company->business_type = $request->business_type;
-        $company->save();
+        $this->company->create($request->all());
 
-        return response()->json(
-            [
+        return response()->json([
                 'success' => TRUE,
                 'message' => 'Successfully created',
             ], IlluminateResponse::HTTP_OK);
@@ -116,179 +77,96 @@ class CompanyController extends Controller
 
     public function components(Request $request)
     {
-        $validator = Validator::make(
-            $request->all(),
-            [
-                'url' => [
-                    'required',
-                    'min:15',
-                    'regex:/((http:|https:)\/\/)[^\/]+/'
-                ],
-                'components' => 'required'
-            ]
-        );
-
+        $validator = Validator::make($request->all(), $this->company->rule);
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'success' => FALSE,
-                    'error' => [
-                        'code' => 100,
-                        'messages' => $validator->errors()->all()
-                    ]
-                ], IlluminateResponse::HTTP_BAD_REQUEST
-            );
+            return $this->errorResponse($validator->errors()->all());
         }
 
-        $company = Company::where('url', $request->url)->first();
+        $company = $this->company->findByUrl($request->url);
 
-        if (is_null($company))
-        {
-            return response()->json(
-                [
-                    'success' => FALSE,
-                    'error' => [
-                        'code' => 100,
-                        'messages' => 'Company not found'
-                    ]
-                ], IlluminateResponse::HTTP_NOT_FOUND
-            );
+        if (is_null($company)) {
+            return $this->errorResponse($validator->errors()->all(), IlluminateResponse::HTTP_NOT_FOUND);
         }
 
         $company->deactivateComponents();
 
         try {
-            foreach ($request->components as $type => $value)
-            {
-                if ($type == static::PLUGINS)
-                {
-                    foreach ($value as &$plugin)
-                    {
-                        $component = $this->getOrCreateComponent($plugin['slug'], 'plugin');
-                        if(!is_null($component)) {
-                            $company->addComponent(
-                                $component->id,
-                                $plugin['version'],
-                                $plugin['active']
-                            );
-                        }
-                        
+            foreach ($request->components as $type => $value) {
+                if ($type == static::PLUGINS) {
+                    foreach ($value as &$plugin) {
+                        $type = 'plugin';
+                        $component = $this->companyService->getOrCreateComponent($plugin['slug'], $type);
+                        $version = $plugin['version'];
+                        $active = $plugin['active'];
                     }
                 }
-                else
-                {
-                    $component = $this->getOrCreateComponent($value['slug'], $type);
-                    if(!is_null($component)) {
-                        $company->addComponent(
-                            $component->id,
-                            $value['version'],
-                            TRUE,
-                            $type
-                        );
-                    }
+                else {
+                    $component = $this->companyService->getOrCreateComponent($value['slug'], $type);
+                    $version = $value['version'];
+                    $active = TRUE;
+                }
+                if (!is_null($component)) {
+                    $company->addComponent(
+                        $component->id,
+                        $version,
+                        $active,
+                        $type
+                    );
                 }
             }
 
-            return response()->json(
-                [
+            return response()->json([
                     'success' => TRUE,
                     'message' => 'Components successfully created',
                 ], IlluminateResponse::HTTP_OK);
         }
-        catch (\Throwable $th)
-        {
-            return response()->json(
-                [
-                    'success' => FALSE,
-                    'error' => [
-                        'code' => 100,
-                        'messages' => $th->getMessage()
-                    ]
-                ], IlluminateResponse::HTTP_INTERNAL_SERVER_ERROR);
+        catch (\Throwable $th) {
+            return $this->errorResponse($th->getMessage(), IlluminateResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
 
     public function feedback(Request $request)
     {
-        $url = $request->url;
-        $status = $request->status;
-        $feedback = Company::where('url', $url)
-                            ->first()
-                            ->feedback()
-                            ->where('status', $status)
-                            ->get();
+        $validator = Validator::make($request->all(), $this->company->rule);
+        if ($validator->fails()) {
+            return $this->errorResponse($validator->errors()->all());
+        }
 
-        return response()->json(
-            [
+        return response()->json([
                 'success' => TRUE,
-                'data' => $feedback,
+                'data' => $company->feedbackByStatus($request->url, $request->status),
             ], IlluminateResponse::HTTP_OK);
     }
 
     public function report(Request $request)
     {
-        $company = Company::where('url', $request->url)->first();
-        $insights = $company->insights()
-                            ->get(['general'])
-                            ->groupBy(function($date)
-                            {
-                                return Carbon::parse($date->created_at)->format('W');
-                            })
-                            ->map(function($row) {
-                                return round($row->sum('general')/count($row));
-                            });
+        $company = $this->company->findByUrl($request->url);
+        $insights = $company->insightsByWeek();
 
-        $industryAverage = IndustryAverage::where('industry', $company->industry)->first();
-
-        return response()->json(
-            [
+        return response()->json([
                 'success' => TRUE,
-                'average' => $industryAverage,
+                'average' => $this->industryAverage->findByIndustry($company->industry),
                 'data' => $insights,
             ], IlluminateResponse::HTTP_OK);
-    }
-
-    private function getOrCreateComponent($slug, $type)
-    {
-        $component = Component::where('slug', $slug)
-                                ->where('component_type', $type)
-                                ->first();
-
-        if (is_null($component))
-        {
-            $path = $type == static::WORDPRESS ? 'wordpresses' : $type .'s';
-
-            $vulnData = $this->vulnReport($path, $slug);
-            if (is_null($vulnData))
-            {
-                return null;
-            }
-            $version = $type == static::WORDPRESS ? key((array)$vulnData) : null;
-
-            $component = Component::create($slug, $vulnData, $type, $version);
-
-            $newSlug = $type == static::WORDPRESS ? $version : $slug;
-            $vulnerabilities = $vulnData[$newSlug]['vulnerabilities'];
-
-            foreach ($vulnerabilities as &$vuln)
-            {
-                $vulnerability = Vulnerability::create($vuln);
-                $component->addVulnerability($vulnerability->id);
-            }
-        }
-
-        return $component;
     }
 
     private function vulnReport($path, $slug)
     {
         $url = getenv('WP_VULN_BASE_URL'). '/' .$path. '/' .$slug;
         $response = Http::withHeaders(['Authorization' => 'Token token=' . getenv('WP_VULN_TOKEN')])->get($url);
-        if ($response->ok())
-        {
+        if ($response->ok()) {
             return $response->json();
         }
         return null;
+    }
+
+    private function errorResponse($error, $response = IlluminateResponse::HTTP_BAD_REQUEST)
+    {
+        return response()->json([
+                'success' => FALSE,
+                'error' => [ 'message' => $error ]
+            ], $response
+        );
     }
 }

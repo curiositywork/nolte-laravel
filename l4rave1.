@@ -1,0 +1,30 @@
+l4rave1.
+curl -H "Authorization: Token token=IzosELp0sFzr4L9puaCxqgAU6DZzsKad2JyG5UIURs8" https://wpvulndb.com/api/v3/plugins/nolte
+curl -H "Authorization: Token token=IzosELp0sFzr4L9puaCxqgAU6DZzsKad2JyG5UIURs8" https://wpvulndb.com/api/v3/themes/twentytwenty
+
+        $validator = Validator::make(
+            $request->all(),
+            [
+                'url' => [
+                    'required',
+                    'unique:companies',
+                    'min:15',
+                    'regex:/((http:|https:)\/\/)[^\/]+/'
+                ],
+                'size' => 'required|in:micro,small,medium,large',
+                'industry' => 'required|in:apparel,banking_financial,electronics,food_groceries,goverment,others',
+                'business_type' => 'required|in:digital,ecommerce,both',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json(
+                [
+                    'success' => FALSE,
+                    'error' => [
+                        'code' => 100,
+                        'messages' => $validator->errors()->all()
+                    ]
+                ], IlluminateResponse::HTTP_BAD_REQUEST
+            );
+        }

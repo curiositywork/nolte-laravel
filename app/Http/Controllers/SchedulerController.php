@@ -27,22 +27,6 @@ class SchedulerController extends Controller
      */
     public function industryAverage(Request $request)
     {
-        if ( !app()->environment('development') )
-        {
-            if ( !$request->hasHeader( 'X-Appengine-Cron' ) )
-            {
-                return response()->json(
-                    [
-                        'success' => FALSE,
-                        'error' => [
-                            'code' => 100,
-                            'messages' => 'Unauthorized'
-                        ]
-                    ], IlluminateResponse::HTTP_UNAUTHORIZED
-                );
-            }
-        }
-
         foreach( static::INDUSTRY_AVERAGES_BASE as $key => $value )
         {   
             $industryAvg = [ $value ];
