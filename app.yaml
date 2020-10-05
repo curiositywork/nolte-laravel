@@ -1,0 +1,14 @@
+runtime: php73
+
+env_variables:
+  ## Put production environment variables here.
+  APP_KEY: base64:V4r9M7d8M6uUJ2QA07yt6XxMdsL8nDNbFW8ZRAEmnKU=
+  APP_STORAGE: /tmp
+  VIEW_COMPILED_PATH: /tmp
+  SESSION_DRIVER: cookie
+  ## Set these environment variables according to your CloudSQL configuration.
+  DB_DATABASE: nolte-plugin
+  DB_USERNAME: root
+  DB_PASSWORD: kdm473IhgIktueIb
+  ## for MYSQL, use DB_SOCKET:
+  DB_SOCKET: "/cloudsql/curiosity-work-staging:us-east1:nolte-plugin"

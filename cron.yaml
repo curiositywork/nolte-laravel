@@ -1,0 +1,9 @@
+cron:
+  - description: "Daily insights"
+    url: /api/v1/scheduler/insights
+    schedule: every 24 hours
+    target: default
+  - description: "Daily industry average"
+    url: /api/v1/scheduler/industry/average
+    schedule: every 24 hours
+    target: default
