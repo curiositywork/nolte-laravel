@@ -2,13 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use Exception;
-use Carbon\Carbon;
-use App\Audit;
 use App\Company;
-use App\Insight;
-use App\Component;
-use App\Vulnerability;
 use App\IndustryAverage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -18,18 +12,14 @@ use Illuminate\Http\Response as IlluminateResponse;
 
 class CompanyController extends Controller
 {
-    const WORDPRESS = 'wordpress';
-    const PLUGINS  = 'plugins';
-
     private $company;
-    private $component;
-    private $vulnerability;
+    private $companyService;
     private $industryAverage;
 
     public function __construct()
     {
         $this->company = new Company;
-        $this->companyService = new CompanyService;
+        $this->companyService = resolve(CompanyService::class);
         $this->industryAverage = new IndustryAverage;
     }
 
@@ -39,7 +29,7 @@ class CompanyController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function onboardingCompleted(Request $request)
+    public function check(Request $request)
     {
         $validator = Validator::make($request->all(), $this->company->rule);
         if ($validator->fails()) {
@@ -75,6 +65,12 @@ class CompanyController extends Controller
             ], IlluminateResponse::HTTP_OK);
     }
 
+    /**
+     * Submit all components installed.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function components(Request $request)
     {
         $validator = Validator::make($request->all(), $this->company->rule);
@@ -92,26 +88,19 @@ class CompanyController extends Controller
 
         try {
             foreach ($request->components as $type => $value) {
-                if ($type == static::PLUGINS) {
+                if ($type == 'plugins') {
                     foreach ($value as &$plugin) {
-                        $type = 'plugin';
-                        $component = $this->companyService->getOrCreateComponent($plugin['slug'], $type);
-                        $version = $plugin['version'];
-                        $active = $plugin['active'];
+                        $component = $this->companyService->getOrCreateComponent($plugin['slug'], 'plugin');
+                        if (!is_null($component)) {
+                            $company->addComponent($component->id, $plugin['version'], $plugin['active'], 'plugin');
+                        }
                     }
                 }
                 else {
                     $component = $this->companyService->getOrCreateComponent($value['slug'], $type);
-                    $version = $value['version'];
-                    $active = TRUE;
-                }
-                if (!is_null($component)) {
-                    $company->addComponent(
-                        $component->id,
-                        $version,
-                        $active,
-                        $type
-                    );
+                    if (!is_null($component)) {
+                        $company->addComponent($component->id, $value['version'], TRUE, $type);
+                    }
                 }
             }
 
@@ -125,22 +114,39 @@ class CompanyController extends Controller
         }
     }
 
-
+    /**
+     * Get company feedback.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function feedback(Request $request)
     {
         $validator = Validator::make($request->all(), $this->company->rule);
         if ($validator->fails()) {
             return $this->errorResponse($validator->errors()->all());
         }
-
+        
+        $company = $this->company->findByUrl($request->url);
         return response()->json([
                 'success' => TRUE,
-                'data' => $company->feedbackByStatus($request->url, $request->status),
+                'data' => $company->feedbackByStatus($request->status),
             ], IlluminateResponse::HTTP_OK);
     }
 
+    /**
+     * Get company report and industry average.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
     public function report(Request $request)
     {
+        $validator = Validator::make($request->all(), $this->company->rule);
+        if ($validator->fails()) {
+            return $this->errorResponse($validator->errors()->all());
+        }
+
         $company = $this->company->findByUrl($request->url);
         $insights = $company->insightsByWeek();
 
@@ -149,16 +155,6 @@ class CompanyController extends Controller
                 'average' => $this->industryAverage->findByIndustry($company->industry),
                 'data' => $insights,
             ], IlluminateResponse::HTTP_OK);
-    }
-
-    private function vulnReport($path, $slug)
-    {
-        $url = getenv('WP_VULN_BASE_URL'). '/' .$path. '/' .$slug;
-        $response = Http::withHeaders(['Authorization' => 'Token token=' . getenv('WP_VULN_TOKEN')])->get($url);
-        if ($response->ok()) {
-            return $response->json();
-        }
-        return null;
     }
 
     private function errorResponse($error, $response = IlluminateResponse::HTTP_BAD_REQUEST)

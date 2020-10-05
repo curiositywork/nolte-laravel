@@ -19,7 +19,7 @@ class CreateFeedbackTable extends Migration
             $table->string('type', 20)->nullable();
             $table->string('version', 20)->nullable();
             $table->enum('impact', ['high', 'medium', 'low']);
-            $table->enum('status', ['pending', 'completed', 'archive']);
+            $table->enum('status', ['pending', 'completed', 'archived']);
             $table->integer('company_id')->unsigned();
             $table->foreign('company_id')->references('id')->on('companies')->onDelete('cascade');
             $table->timestamps();

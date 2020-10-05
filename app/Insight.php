@@ -21,6 +21,15 @@ class Insight extends Model
     protected $primaryKey = 'id';
 
     /**
+     * The attributes that should be casted to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'general' => 'float'
+    ];
+
+    /**
      * Indicates if the IDs are auto-incrementing.
      *
      * @var bool
@@ -50,14 +59,17 @@ class Insight extends Model
         return $this->hasMany(Audit::class);
     }
 
-    /**
-     * The attributes that should be casted to native types.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'general' => 'float'
-    ];
+    public function create($seo, $performance, $accessibility, $security, $general)
+    {
+        $insight = new Insight;
+        $insight->seo = $seo;
+        $insight->general = $general;
+        $insight->security = $security;
+        $insight->performance = $performance;
+        $insight->accessibility = $accessibility;
+
+        return $insight;
+    }
 }
 
 

@@ -2,10 +2,32 @@
 
 namespace App;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Company extends Model
 {
+
+    public $rule = [
+        'url' => [
+            'required',
+            'min:15',
+            'regex:/((http:|https:)\/\/)[^\/]+/'
+        ]
+    ];
+
+    public $createRule = [
+        'url' => [
+            'required',
+            'unique:companies',
+            'min:15',
+            'regex:/((http:|https:)\/\/)[^\/]+/'
+        ],
+        'size' => 'required|in:micro,small,medium,large',
+        'industry' => 'required|in:apparel,banking_financial,electronics,food_groceries,goverment,others',
+        'business_type' => 'required|in:digital,ecommerce,both',
+    ];
+
     /**
      * The attributes excluded from the model's JSON form.
      *
@@ -34,7 +56,7 @@ class Company extends Model
      */
     public $timestamps = true;
 
-    public $filleable = [
+    public $fillable = [
         'url', 'size', 'industry', 'business_type'
     ];
 
@@ -46,55 +68,6 @@ class Company extends Model
      *   return $this->hasOne(Customer::class);
      * }
     */
-
-    public $rule = [
-        'url' => [
-            'required',
-            'min:15',
-            'regex:/((http:|https:)\/\/)[^\/]+/'
-        ]
-    ];
-
-    public $createRule = [
-        'url' => [
-            'required',
-            'unique:companies',
-            'min:15',
-            'regex:/((http:|https:)\/\/)[^\/]+/'
-        ],
-        'size' => 'required|in:micro,small,medium,large',
-        'industry' => 'required|in:apparel,banking_financial,electronics,food_groceries,goverment,others',
-        'business_type' => 'required|in:digital,ecommerce,both',
-    ];
-
-
-    public function findByUrl($url)
-    {
-        return $this->whereUrl($url)
-                    ->first();
-    }
-
-    public function feedbackByStatus($url, $status)
-    {
-        return $this->whereUrl('url', $url)
-                    ->first()
-                    ->feedback()
-                    ->where('status', $status)
-                    ->get();
-    }
-
-    public function insightsByWeek()
-    {
-        return $this->insights()
-                    ->get(['general'])
-                    ->groupBy(function($date)
-                    {
-                        return Carbon::parse($date->created_at)->format('W');
-                    })
-                    ->map(function($row) {
-                        return round($row->sum('general')/count($row));
-                    });
-    }
 
     /**
      * Get the feedback for the company.
@@ -124,6 +97,37 @@ class Company extends Model
             'component_id');
     }
 
+    public function findByUrl($url)
+    {
+        return $this->whereUrl($url)
+                    ->first();
+    }
+
+    public function feedbackByStatus($status)
+    {
+        return $this->feedback()
+                    ->where('status', $status)
+                    ->get();
+    }
+
+    public function insightsByWeek()
+    {
+        return $this->insights()
+                    ->get(['general'])
+                    ->groupBy(function($date)
+                    {
+                        return Carbon::parse($date->created_at)->format('W');
+                    })
+                    ->map(function($row) {
+                        return round($row->sum('general')/count($row));
+                    });
+    }
+
+    public function getByIndustry($industry)
+    {
+        return $this->whereIndustry($industry)->get();
+    }
+
     public function componentsWithVulnerabilities()
     {
         return $this->components()
@@ -136,8 +140,8 @@ class Company extends Model
     public function findFeedback($name, $type)
     {
         return $this->feedback()
-                    ->where('name', $name)
-                    ->where('type', $type)
+                    ->whereName($name)
+                    ->whereType($type)
                     ->first();
     }
 
@@ -147,8 +151,7 @@ class Company extends Model
                               ->wherePivot('active', true)
                               ->get();
 
-        foreach ($components as $key => $deletedComponent)
-        {
+        foreach ($components as $key => $deletedComponent) {
             $this->components()
                  ->updateExistingPivot(
                     $deletedComponent->id,
@@ -157,31 +160,20 @@ class Company extends Model
         }
     }
 
-    public function addComponent($componentId, $version, $active, $type = 'plugin'): void
-    {        
+    public function addComponent($componentId, $version, $active, $type): void
+    {
+        $data = [
+            'version' => $version,
+            'active' => $active,
+            'type' => $type
+        ];
+
         $exists = $this->components()->wherePivot('component_id', $componentId)->first();
-        if (is_null($exists))
-        {
-            $this->components()
-                ->attach(
-                    $componentId,
-                    [
-                        'version' => $version,
-                        'active' => $active,
-                        'type' => $type
-                    ]
-                );
+        if (is_null($exists)) {
+            $this->components()->attach($componentId, $data);
         }
-        else 
-        {
-            $this->components()->updateExistingPivot(
-                $exists->id, 
-                [
-                    'version' => $version,
-                    'active' => $active,
-                    'type' => $type
-                ]
-            );
+        else {
+            $this->components()->updateExistingPivot($exists->id, $data);
         }     
     }
 }

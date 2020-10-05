@@ -17,7 +17,7 @@ class CheckCronHeader
      */
     public function handle($request, Closure $next)
     {
-        if (!app()->environment('development') && !$request->hasHeader('X-Appengine-Cron') && !$request->url)
+        if (!app()->environment('development') && !$request->hasHeader('X-Appengine-Cron'))
         {
             Log::warning('unauthorized_access '. $request->getClientIp());
 

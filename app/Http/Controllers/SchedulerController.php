@@ -6,18 +6,21 @@ use App\Company;
 use App\IndustryAverage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Http\Services\InsightsService;
 use Illuminate\Http\Response as IlluminateResponse;
 
 class SchedulerController extends Controller
 {
-    const INDUSTRY_AVERAGES_BASE = [
-        'apparel' => 62,
-        'banking_financial' => 66,
-        'electronics' => 74,
-        'food_groceries' => 74,
-        'goverment' => 65,
-        'others' => 69
-    ];
+    private $company;
+    private $insightService;
+    private $industryAverage;
+
+    public function __construct()
+    {
+        $this->company = new Company;
+        $this->insightService = resolve(InsightsService::class);
+        $this->industryAverage = new IndustryAverage;
+    }
 
     /**
      * Handle the incoming request.
@@ -27,17 +30,13 @@ class SchedulerController extends Controller
      */
     public function industryAverage(Request $request)
     {
-        foreach( static::INDUSTRY_AVERAGES_BASE as $key => $value )
-        {   
-            $industryAvg = [ $value ];
-            
-            $industryAverage = IndustryAverage::firstOrNew( [ 'industry' => $key ] );
-            $companies = Company::where('industry', $key)->get();
-            foreach ( $companies as &$company )
-            {
+        foreach($this->industryAverage->industries as $industry => $value) {
+            $industryAvg = [$value];
+            $industryAverage = $this->industryAverage->firstOrNew(['industry' => $industry]);
+            $companies = $this->company->getByIndustry($industry);
+            foreach ($companies as &$company) {
                 $insight = $company->insights()->latest()->first();
-                if ( !is_null( $insight ) )
-                {
+                if (!is_null( $insight)) {
                     array_push( $industryAvg, $insight->general );
                 }
             }
@@ -45,9 +44,18 @@ class SchedulerController extends Controller
             $industryAverage->save();
         }
 
-        return response()->json(
-            [
+        return response()->json([
                 'success' => TRUE
+            ], IlluminateResponse::HTTP_OK);
+    }
+
+    public function insights(Request $request)
+    {
+        $companies = $this->company->all();
+        $this->insightService->generateFeedback($companies);
+
+        return response()->json([
+                'success' => TRUE,
             ], IlluminateResponse::HTTP_OK);
     }
 }

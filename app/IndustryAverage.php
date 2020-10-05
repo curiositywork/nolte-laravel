@@ -6,6 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class IndustryAverage extends Model
 {
+    public $industries = [
+        'apparel' => 62,
+        'banking_financial' => 66,
+        'electronics' => 74,
+        'food_groceries' => 74,
+        'goverment' => 65,
+        'others' => 69
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -44,7 +52,7 @@ class IndustryAverage extends Model
 
     public function findByIndustry($industry)
     {
-        return $this->where('industry', $company->industry)
+        return $this->where('industry', $industry)
                     ->first();
     }
 }

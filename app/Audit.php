@@ -6,6 +6,26 @@ use Illuminate\Database\Eloquent\Model;
 
 class Audit extends Model
 {
+    public $audits = [
+        'largest-contentful-paint',
+        'speed-index',
+        'interactive',
+        'total-blocking-time',
+        'first-meaningful-paint',
+        'cumulative-layout-shift',
+        'uses-responsive-images',
+        'unminified-javascript',
+        'unminified-css',
+        'server-response-time',
+        'redirects',
+        'meta-description',
+        'link-text',
+        'crawlable-anchors',
+        'is-crawlable',
+        'robots-txt',
+        'structured-data'
+    ];
+
     /**
      * The attributes excluded from the model's JSON form.
      *
@@ -40,5 +60,18 @@ class Audit extends Model
     public function insight()
     {
         return $this->belongsTo(Insight::class);
+    }
+
+    public function create($type, $name, $score, $displayValue, $numericValue, $scoreDisplayMode)
+    {
+        $audit = new Audit;
+        $audit->slug = $type;
+        $audit->title = $name;
+        $audit->score = $score;
+        $audit->display_mode = $scoreDisplayMode;
+        $audit->display_value = $scoreDisplayMode;
+        $audit->numeric_value = $numericValue;
+
+        return $audit;
     }
 }

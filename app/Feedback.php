@@ -6,6 +6,15 @@ use Illuminate\Database\Eloquent\Model;
 
 class Feedback extends Model
 {
+    public $audits = [
+        'is-on-https',
+        'uses-optimized-images',
+        'unminified-css',
+        'unminified-javascript',
+        'redirects',
+        'server-response-time'
+    ];
+
     /**
      * The attributes excluded from the model's JSON form.
      *
@@ -42,6 +51,11 @@ class Feedback extends Model
         return $this->belongsTo(Company::class);
     }
 
+    public function getVulnerabilities()
+    {
+        return $this->load('vulnerabilities');
+    }
+
     /**
      * Get the vulnerabilities of the component.
      */
@@ -52,5 +66,15 @@ class Feedback extends Model
             'feedback_vulnerabilities',
             'feedback_id',
             'vulnerability_id');
+    }
+
+    public function create($name, $type, $impact)
+    {
+        $feedback = new Feedback;
+        $feedback->name = $name;
+        $feedback->type = $type;
+        $feedback->impact = $impact;
+
+        return $feedback;
     }
 }

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::group(['prefix' => 'v1/company'], function () {
-  Route::get('check', 'CompanyController@onboardingCompleted');
+  Route::get('check', 'CompanyController@check');
   Route::get('feedback', 'CompanyController@feedback');
   Route::get('report', 'CompanyController@report');
   Route::get('feedback/{id}', 'FeedbackController@show');
@@ -23,9 +23,10 @@ Route::group(['prefix' => 'v1/company'], function () {
   Route::post('components', 'CompanyController@components');
   Route::patch('feedback/archive/{id}', 'FeedbackController@archive');
   Route::patch('feedback/unarchive/{id}', 'FeedbackController@unarchive');
-  Route::get('insights', 'InsightsController@insights')->middleware('check.cron.header');
+  Route::get('insights', 'InsightsController@insights');
 });
 
 Route::group(['prefix' => 'v1/scheduler'], function () {
   Route::get('industry/average', 'SchedulerController@industryAverage')->middleware('check.cron.header');
+  Route::get('insights', 'SchedulerController@insights')->middleware('check.cron.header');
 });

@@ -8,6 +8,13 @@ use Illuminate\Http\Response as IlluminateResponse;
 
 class FeedbackController extends Controller
 {
+    private $feedback;
+
+    public function __construct()
+    {
+        $this->feedback = new Feedback;
+    }
+
     /**
      * Display the specified resource.
      *
@@ -16,16 +23,15 @@ class FeedbackController extends Controller
      */
     public function show($id)
     {
-        $feedback = Feedback::find($id)->load('vulnerabilities');
-        return response()->json(
-            [
+        $feedback = $this->feedback->find($id);
+        return response()->json([
                 'success' => TRUE,
-                'data' => $feedback,
+                'data' => $feedback->getVulnerabilities(),
             ], IlluminateResponse::HTTP_OK);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Archive the specified feedback.
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
@@ -33,31 +39,36 @@ class FeedbackController extends Controller
      */
     public function archive($id)
     {
-        $feedback = Feedback::find($id);
-        if ($feedback->status != 'archive')
+        $feedback = $this->feedback->find($id);
+        if ($feedback->status != 'archived')
         {
-            $feedback->status = 'archive';
+            $feedback->status = 'archived';
             $feedback->save();
         }
         
-        return response()->json(
-            [
+        return response()->json([
                 'success' => TRUE,
                 'data' => $feedback,
             ], IlluminateResponse::HTTP_OK);
     }
-
+    
+    /**
+     * Unarchive the specified feedback.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function unarchive($id)
     {
-        $feedback = Feedback::find($id);
-        if ($feedback->status == 'archive')
+        $feedback = $this->feedback->find($id);
+        if ($feedback->status == 'archived')
         {
             $feedback->status = 'pending';
             $feedback->save();
         }
         
-        return response()->json(
-            [
+        return response()->json([
                 'success' => TRUE,
                 'data' => $feedback,
             ], IlluminateResponse::HTTP_OK);
