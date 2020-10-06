@@ -17,8 +17,8 @@ class InsightsService
 
     public function __construct()
     {
-        $this->audit = new Audit;
-        $this->insight = new Insight;
+        $this->audit    = new Audit;
+        $this->insight  = new Insight;
         $this->feedback = new Feedback;
     }
 
@@ -27,10 +27,9 @@ class InsightsService
         $general = 0;
 
         foreach ($companies as &$company) {
-            $components = $company->componentsWithVulnerabilities();
-            $insightReport = $this->pageSpeedReport($company->url);
-
-            $reportAudits = $insightReport['audits'];
+            $components       = $company->componentsWithVulnerabilities();
+            $insightReport    = $this->pageSpeedReport($company->url);
+            $reportAudits     = $insightReport['audits'];
             $reportCategories = $insightReport['categories'];
 
             $insecureComponents = $this->insecureComponents($company, $components);
@@ -40,13 +39,13 @@ class InsightsService
                 array_push($insecureComponents, 'performance');
             }
 
-            $seo = $reportCategories['seo']['score'] * 100;
-            $performance = $reportCategories['performance']['score'] * 100;
+            $seo           = $reportCategories['seo']['score'] * 100;
+            $performance   = $reportCategories['performance']['score'] * 100;
             $accessibility = $reportCategories['accessibility']['score'] * 100;
-            $security = 100 - (count(array_unique($insecureComponents)) *  25);
-            $general = intval(($seo + $security + $performance + $accessibility)/4);
+            $security      = 100 - (count(array_unique($insecureComponents)) *  25);
+            $general       = intval(($seo + $security + $performance + $accessibility)/4);
+            $insight       = $this->insight->create($seo, $performance, $accessibility, $security, $general);
 
-            $insight = $this->insight->create($seo, $performance, $accessibility, $security, $general);
             $company->insights()->save($insight);
 
             $this->reportAudits($company, $insight, $reportAudits);
@@ -58,23 +57,23 @@ class InsightsService
     private function reportAudits($company, $insight, $audits)
     {
         foreach ($audits as &$audit) {
-            $type = $audit['id'];
-            $name = $audit['title'];
-            $score = isset($audit['score']) ? $audit['score'] : null;
-            $displayValue = isset($audit['displayValue']) ? $audit['displayValue'] : null;
-            $numericValue = isset($audit['numericValue']) ? $audit['numericValue'] : null;
-            $scoreDisplayMode = isset($audit['scoreDisplayMode']) ? $audit['scoreDisplayMode'] : null;
+            $type             = $audit['id'];
+            $name             = $audit['title'];
+            $score            = $this->isSet($audit['score']);
+            $displayValue     = $this->isSet($audit['displayValue']);
+            $numericValue     = $this->isSet($audit['numericValue']);
+            $scoreDisplayMode = $this->isSet($audit['scoreDisplayMode']);
 
             if (in_array($type, $this->feedback->audits)) {
-                if (!boolval($score)) {
+                if (($displayValue == 'binary' && !boolval($score)) || $score <= 0.5) {
                     $feedback = $company->findFeedback($name, $type);
 
                     if (is_null($feedback)) {
-                        $impact = $type == 'is-on-https' ? 'high' : 'medium';
+                        $impact   = $this->setImpact($type);
                         $feedback = $this->feedback->create($name, $type, $impact);
                     }
 
-                    $feedback->status = $score == 1 ? 'completed' : 'pending';
+                    $feedback->status = $score > 0.5 ? 'completed' : 'pending';
                     $company->feedback()->save($feedback);
                 }
             }
@@ -93,10 +92,10 @@ class InsightsService
             $hasVulnerability = false;
             $vulnerabilityIds = [];
 
-            $name = $component->name;
-            $type = $component->component_type;
+            $name    = $component->name;
+            $type    = $component->component_type;
             $version = $component->pivot->version;
-            $active = boolval($component->pivot->active);
+            $active  = boolval($component->pivot->active);
 
             foreach ($component->vulnerabilities as &$vulnerability) {
                 $fixedVersion = version_compare($version, $vulnerability->fixed_in) < 0;
@@ -114,7 +113,7 @@ class InsightsService
                 }
 
                 if (is_null($feedback)) {
-                    $impact = $type == 'plugin' ? 'high' : 'medium';
+                    $impact   = $this->setImpact($type);
                     $feedback = $this->feedback->create($name, $type, $impact);
                 }
 
@@ -125,15 +124,10 @@ class InsightsService
                 $feedback->version = $version;
 
                 $company->feedback()->save($feedback);
-                $feedback->vulnerabilities()->detach();
-
-                foreach ($vulnerabilityIds as $vulnerabilityId) {
-                    $feedback->vulnerabilities()
-                            ->attach($vulnerabilityId);
-                }
+                $this->attachVulnerabilities($feedback, $vulnerabilityIds);
             } else {
                 if (!is_null($feedback)) {
-                    $feedback->status = 'completed';
+                    $feedback->status  = 'completed';
                     $feedback->version = $version;
                     $company->feedback()->save($feedback);
                 }
@@ -142,10 +136,27 @@ class InsightsService
 
         return $insecureComponents;
     }
+
+    private function attachVulnerabilities($feedback, $ids)
+    {
+        $feedback->vulnerabilities()->detach();
+        foreach ($ids as $id) {
+            $feedback->vulnerabilities()->attach($id);
+        }
+    }
+
+    private function setImpact($value)
+    {
+        return $value == 'plugin' || 'is-on-https' ? 'high' : 'medium';
+    }
+    private function isSet($value)
+    {
+        return isset($value) ? $value : null;
+    }  
     
     private function pageSpeedReport($url)
     {
-        $pageSpeedUrl = getenv('PAGE_SPEED_BASE_URL');
+        $pageSpeedUrl   = getenv('PAGE_SPEED_BASE_URL');
         $pageSpeedToken = getenv('PAGE_SPEED_TOKEN');
 
         $uri = $pageSpeedUrl. 'pagespeedonline/v5/runPagespeed?url=' .$url. '&key='. $pageSpeedToken .

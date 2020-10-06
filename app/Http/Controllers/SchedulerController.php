@@ -17,8 +17,8 @@ class SchedulerController extends Controller
 
     public function __construct()
     {
-        $this->company = new Company;
-        $this->insightService = resolve(InsightsService::class);
+        $this->company         = new Company;
+        $this->insightService  = resolve(InsightsService::class);
         $this->industryAverage = new IndustryAverage;
     }
 
@@ -28,11 +28,12 @@ class SchedulerController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function industryAverage(Request $request)
+    public function industryAverage()
     {
         foreach($this->industryAverage->industries as $industry => $value) {
-            $industryAvg = [$value];
+            $industryAvg     = [$value];
             $industryAverage = $this->industryAverage->firstOrNew(['industry' => $industry]);
+
             $companies = $this->company->getByIndustry($industry);
             foreach ($companies as &$company) {
                 $insight = $company->insights()->latest()->first();
@@ -45,17 +46,17 @@ class SchedulerController extends Controller
         }
 
         return response()->json([
-                'success' => TRUE
+                'success' => true
             ], IlluminateResponse::HTTP_OK);
     }
 
-    public function insights(Request $request)
+    public function insights()
     {
         $companies = $this->company->all();
         $this->insightService->generateFeedback($companies);
 
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
             ], IlluminateResponse::HTTP_OK);
     }
 }

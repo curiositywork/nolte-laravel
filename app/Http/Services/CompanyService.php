@@ -17,7 +17,7 @@ class CompanyService
 
     public function __construct()
     {
-        $this->component = new Component;
+        $this->component     = new Component;
         $this->vulnerability = new Vulnerability;
     }
 
@@ -32,11 +32,9 @@ class CompanyService
                 if (is_null($vulnData)) {
                     return null;
                 }
-                $version = $type == static::WORDPRESS ? key((array)$vulnData) : null;
-
-                $component = $this->component->create($slug, $vulnData, $type, $version);
-
-                $newSlug = $type == static::WORDPRESS ? $version : $slug;
+                $version         = $type == static::WORDPRESS ? key((array) $vulnData) : null;
+                $component       = $this->component->create($slug, $vulnData, $type, $version);
+                $newSlug         = $type == static::WORDPRESS ? $version : $slug;
                 $vulnerabilities = $vulnData[$newSlug]['vulnerabilities'];
 
                 foreach ($vulnerabilities as &$vuln) {
@@ -53,7 +51,7 @@ class CompanyService
 
     private function vulnReport($path, $slug)
     {
-        $url = getenv('WP_VULN_BASE_URL'). '/' .$path. '/' .$slug;
+        $url      = getenv('WP_VULN_BASE_URL'). '/' .$path. '/' .$slug;
         $response = Http::withHeaders(['Authorization' => 'Token token=' . getenv('WP_VULN_TOKEN')])->get($url);
         if ($response->ok()) {
             return $response->json();

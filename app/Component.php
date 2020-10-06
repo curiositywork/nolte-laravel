@@ -9,8 +9,8 @@ use Illuminate\Database\Eloquent\Model;
 class Component extends Model
 {
     const WORDPRESS = 'wordpress';
-    const THEME = 'theme';
-    const PLUGIN = 'plugin';
+    const THEME     = 'theme';
+    const PLUGIN    = 'plugin';
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -78,35 +78,35 @@ class Component extends Model
 
     public function create($slug, $data, $type, $version)
     {
-        $closed = false;
+        $closed  = false;
         $popular = true;
 
         if ($type == static::WORDPRESS) {
-            $name = ucfirst(static::WORDPRESS) .' '. $version;
-            $friendly_name = $name;
-            $latest_version = $version;
+            $name          = ucfirst(static::WORDPRESS) .' '. $version;
+            $friendlyName  = $name;
+            $latestVersion = $version;
         } else {
-            $name = ucfirst($slug);
-            $popular = $data[$slug]['popular'];
-            $friendly_name =  $data[$slug]['friendly_name'];
-            $latest_version = $data[$slug]['latest_version'];
+            $name          = ucfirst($slug);
+            $popular       = $data[$slug]['popular'];
+            $friendlyName  =  $data[$slug]['friendly_name'];
+            $latestVersion = $data[$slug]['latest_version'];
 
             if (isset($data[$slug]['closed']) && isset($data[$slug]['closed_reason'])) {
-                $closed = $data[$slug]['closed'];
-                $closed_reason = $data[$slug]['closed_reason'];
+                $closed       = $data[$slug]['closed'];
+                $closedReason = $data[$slug]['closed_reason'];
             }
         }
 
-        $component = new Component;
-        $component->name = $name;
-        $component->slug = $slug;
-        $component->closed = $closed;
-        $component->popular = $popular;
-        $component->latest_version = $latest_version;
+        $component                 = new Component;
+        $component->name           = $name;
+        $component->slug           = $slug;
+        $component->closed         = $closed;
+        $component->popular        = $popular;
+        $component->latest_version = $latestVersion;
         $component->component_type = $type;
-        $component->friendly_name = $friendly_name;
+        $component->friendly_name  = $friendlyName;
         if ($closed) {
-            $component->closed_reason = $closed_reason;
+            $component->closed_reason = $closedReason;
         }
         $component->save();
 

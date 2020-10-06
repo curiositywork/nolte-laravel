@@ -25,7 +25,7 @@ class FeedbackController extends Controller
     {
         $feedback = $this->feedback->find($id);
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'data' => $feedback->getVulnerabilities(),
             ], IlluminateResponse::HTTP_OK);
     }
@@ -47,7 +47,7 @@ class FeedbackController extends Controller
         }
         
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'data' => $feedback,
             ], IlluminateResponse::HTTP_OK);
     }
@@ -69,7 +69,7 @@ class FeedbackController extends Controller
         }
         
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'data' => $feedback,
             ], IlluminateResponse::HTTP_OK);
     }

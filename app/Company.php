@@ -151,7 +151,7 @@ class Company extends Model
                               ->wherePivot('active', true)
                               ->get();
 
-        foreach ($components as $key => $deletedComponent) {
+        foreach ($components as &$deletedComponent) {
             $this->components()
                  ->updateExistingPivot(
                     $deletedComponent->id,

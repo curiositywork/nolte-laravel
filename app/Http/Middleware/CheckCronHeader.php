@@ -23,7 +23,7 @@ class CheckCronHeader
 
             return response()->json(
                 [
-                    'success' => FALSE,
+                    'success' => false,
                     'error' => [
                         'messages' => 'Unauthorized'
                     ]

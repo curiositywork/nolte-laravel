@@ -70,9 +70,9 @@ class Feedback extends Model
 
     public function create($name, $type, $impact)
     {
-        $feedback = new Feedback;
-        $feedback->name = $name;
-        $feedback->type = $type;
+        $feedback         = new Feedback;
+        $feedback->name   = $name;
+        $feedback->type   = $type;
         $feedback->impact = $impact;
 
         return $feedback;

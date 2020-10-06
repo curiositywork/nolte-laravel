@@ -61,15 +61,13 @@ class Insight extends Model
 
     public function create($seo, $performance, $accessibility, $security, $general)
     {
-        $insight = new Insight;
-        $insight->seo = $seo;
-        $insight->general = $general;
-        $insight->security = $security;
-        $insight->performance = $performance;
+        $insight                = new Insight;
+        $insight->seo           = $seo;
+        $insight->general       = $general;
+        $insight->security      = $security;
+        $insight->performance   = $performance;
         $insight->accessibility = $accessibility;
 
         return $insight;
     }
 }
-
-

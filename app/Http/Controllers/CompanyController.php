@@ -18,8 +18,8 @@ class CompanyController extends Controller
 
     public function __construct()
     {
-        $this->company = new Company;
-        $this->companyService = resolve(CompanyService::class);
+        $this->company         = new Company;
+        $this->companyService  = resolve(CompanyService::class);
         $this->industryAverage = new IndustryAverage;
     }
 
@@ -39,7 +39,7 @@ class CompanyController extends Controller
         $company = $this->company->findByUrl($request->url);
 
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'completed' => !is_null($company),
             ], IlluminateResponse::HTTP_OK);
     }
@@ -60,7 +60,7 @@ class CompanyController extends Controller
         $this->company->create($request->all());
 
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'message' => 'Successfully created',
             ], IlluminateResponse::HTTP_OK);
     }
@@ -99,13 +99,13 @@ class CompanyController extends Controller
                 else {
                     $component = $this->companyService->getOrCreateComponent($value['slug'], $type);
                     if (!is_null($component)) {
-                        $company->addComponent($component->id, $value['version'], TRUE, $type);
+                        $company->addComponent($component->id, $value['version'], true, $type);
                     }
                 }
             }
 
             return response()->json([
-                    'success' => TRUE,
+                    'success' => true,
                     'message' => 'Components successfully created',
                 ], IlluminateResponse::HTTP_OK);
         }
@@ -129,7 +129,7 @@ class CompanyController extends Controller
         
         $company = $this->company->findByUrl($request->url);
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'data' => $company->feedbackByStatus($request->status),
             ], IlluminateResponse::HTTP_OK);
     }
@@ -147,11 +147,11 @@ class CompanyController extends Controller
             return $this->errorResponse($validator->errors()->all());
         }
 
-        $company = $this->company->findByUrl($request->url);
+        $company  = $this->company->findByUrl($request->url);
         $insights = $company->insightsByWeek();
 
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'average' => $this->industryAverage->findByIndustry($company->industry),
                 'data' => $insights,
             ], IlluminateResponse::HTTP_OK);
@@ -160,7 +160,7 @@ class CompanyController extends Controller
     private function errorResponse($error, $response = IlluminateResponse::HTTP_BAD_REQUEST)
     {
         return response()->json([
-                'success' => FALSE,
+                'success' => false,
                 'error' => [ 'message' => $error ]
             ], $response
         );

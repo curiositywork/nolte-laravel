@@ -64,12 +64,12 @@ class Audit extends Model
 
     public function create($type, $name, $score, $displayValue, $numericValue, $scoreDisplayMode)
     {
-        $audit = new Audit;
-        $audit->slug = $type;
-        $audit->title = $name;
-        $audit->score = $score;
-        $audit->display_mode = $scoreDisplayMode;
-        $audit->display_value = $scoreDisplayMode;
+        $audit                = new Audit;
+        $audit->slug          = $type;
+        $audit->title         = $name;
+        $audit->score         = $score;
+        $audit->display_mode  = $scoreDisplayMode;
+        $audit->display_value = $displayValue;
         $audit->numeric_value = $numericValue;
 
         return $audit;

@@ -15,17 +15,17 @@ class InsightsController extends Controller
 
     public function __construct()
     {
-        $this->company = new Company;
+        $this->company        = new Company;
         $this->insightService = resolve(InsightsService::class);
     }
 
     public function insights(Request $request)
     {
         $companies = $this->company->whereUrl($request->url)->get();
-        $general = $this->insightService->generateFeedback($companies);
+        $general   = $this->insightService->generateFeedback($companies);
 
         return response()->json([
-                'success' => TRUE,
+                'success' => true,
                 'general' => $general,
             ], IlluminateResponse::HTTP_OK);
     }
