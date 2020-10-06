@@ -47,7 +47,6 @@ class InsightsService
             $insight       = $this->insight->create($seo, $performance, $accessibility, $security, $general);
 
             $company->insights()->save($insight);
-
             $this->reportAudits($company, $insight, $reportAudits);
         }
 
@@ -59,11 +58,10 @@ class InsightsService
         foreach ($audits as &$audit) {
             $type             = $audit['id'];
             $name             = $audit['title'];
-            $score            = $this->isSet($audit['score']);
-            $displayValue     = $this->isSet($audit['displayValue']);
-            $numericValue     = $this->isSet($audit['numericValue']);
-            $scoreDisplayMode = $this->isSet($audit['scoreDisplayMode']);
-
+            $score            = isset($audit['score']) ? $audit['score'] : null;
+            $displayValue     = isset($audit['displayValue']) ? $audit['displayValue'] : null;
+            $numericValue     = isset($audit['numericValue']) ? $audit['numericValue'] : null;
+            $scoreDisplayMode = isset($audit['scoreDisplayMode']) ? $audit['scoreDisplayMode'] : null;
             if (in_array($type, $this->feedback->audits)) {
                 if (($displayValue == 'binary' && !boolval($score)) || $score <= 0.5) {
                     $feedback = $company->findFeedback($name, $type);
@@ -149,10 +147,6 @@ class InsightsService
     {
         return $value == 'plugin' || 'is-on-https' ? 'high' : 'medium';
     }
-    private function isSet($value)
-    {
-        return isset($value) ? $value : null;
-    }  
     
     private function pageSpeedReport($url)
     {
